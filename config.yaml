@@ -35,6 +35,7 @@ options:
          * kilo
          * liberty
          * mitaka
+        * newton
 
       NOTE: updating this setting to a source that is known to provide
       a later version of OpenStack will trigger a software upgrade.
@@ -49,6 +50,7 @@ options:
       the corresponding OpenStack github branch will be used:
         * liberty
         * mitaka
+        * newton
         * master
 
       The YAML must minimally include requirements, neutron-fwaas,
@@ -260,3 +262,20 @@ options:
       The CPU core multiplier to use when configuring worker processes for
       neutron and nova-metadata-api. By default, the number of workers for
       each daemon is set to twice the number of CPU cores a service unit has.
+  aa-profile-mode:
+    type: string
+    default: 'disable'
+    description: |
+      Experimental enable apparmor profile. Valid settings: 'complain', 'enforce' or 'disable'.
+      AA disabled by default.
+  enable-metadata-network:
+    type: boolean
+    default: False
+    description: |
+      The metadata network is used by solutions which do not leverage the l3
+      agent for providing access to the metadata service.
+  enable-isolated-metadata:
+    type: boolean
+    default: False
+    description: |
+      Enable metadata on an isolated network (no router ports).

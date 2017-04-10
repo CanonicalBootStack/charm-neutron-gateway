@@ -54,6 +54,7 @@ from charmhelpers.contrib.openstack.utils import (
     make_assess_status_func,
     os_release,
     pause_unit,
+    reset_os_release,
     resume_unit,
     os_application_version_set,
 )
@@ -106,6 +107,42 @@ NEUTRON_PLUGIN_CONF = {
     OVS: NEUTRON_ML2_PLUGIN_CONF,
     NSX: NEUTRON_NSX_PLUGIN_CONF,
 }
+
+NEUTRON_DHCP_AA_PROFILE = 'usr.bin.neutron-dhcp-agent'
+NEUTRON_L3_AA_PROFILE = 'usr.bin.neutron-l3-agent'
+NEUTRON_LBAAS_AA_PROFILE = 'usr.bin.neutron-lbaas-agent'
+NEUTRON_LBAASV2_AA_PROFILE = 'usr.bin.neutron-lbaasv2-agent'
+NEUTRON_METADATA_AA_PROFILE = 'usr.bin.neutron-metadata-agent'
+NEUTRON_METERING_AA_PROFILE = 'usr.bin.neutron-metering-agent'
+NOVA_API_METADATA_AA_PROFILE = 'usr.bin.nova-api-metadata'
+NEUTRON_OVS_AA_PROFILE = 'usr.bin.neutron-openvswitch-agent'
+
+APPARMOR_PROFILES = [
+    NEUTRON_DHCP_AA_PROFILE,
+    NEUTRON_L3_AA_PROFILE,
+    NEUTRON_LBAAS_AA_PROFILE,
+    NEUTRON_METADATA_AA_PROFILE,
+    NEUTRON_METERING_AA_PROFILE,
+    NOVA_API_METADATA_AA_PROFILE,
+    NEUTRON_OVS_AA_PROFILE
+]
+
+NEUTRON_OVS_AA_PROFILE_PATH = ('/etc/apparmor.d/{}'
+                               ''.format(NEUTRON_OVS_AA_PROFILE))
+NEUTRON_DHCP_AA_PROFILE_PATH = ('/etc/apparmor.d/{}'
+                                ''.format(NEUTRON_DHCP_AA_PROFILE))
+NEUTRON_L3_AA_PROFILE_PATH = ('/etc/apparmor.d/{}'
+                              ''.format(NEUTRON_L3_AA_PROFILE))
+NEUTRON_LBAAS_AA_PROFILE_PATH = ('/etc/apparmor.d/{}'
+                                 ''.format(NEUTRON_LBAAS_AA_PROFILE))
+NEUTRON_LBAASV2_AA_PROFILE_PATH = ('/etc/apparmor.d/{}'
+                                   ''.format(NEUTRON_LBAASV2_AA_PROFILE))
+NEUTRON_METADATA_AA_PROFILE_PATH = ('/etc/apparmor.d/{}'
+                                    ''.format(NEUTRON_METADATA_AA_PROFILE))
+NEUTRON_METERING_AA_PROFILE_PATH = ('/etc/apparmor.d/{}'
+                                    ''.format(NEUTRON_METERING_AA_PROFILE))
+NOVA_API_METADATA_AA_PROFILE_PATH = ('/etc/apparmor.d/{}'
+                                     ''.format(NOVA_API_METADATA_AA_PROFILE))
 
 GATEWAY_PKGS = {
     OVS: [
@@ -226,6 +263,7 @@ GIT_PACKAGE_BLACKLIST = [
 REQUIRED_INTERFACES = {
     'messaging': ['amqp', 'zeromq-configuration'],
     'neutron-plugin-api': ['neutron-plugin-api'],
+    'network-service': ['quantum-network-service'],
 }
 
 
@@ -247,7 +285,7 @@ def get_packages():
     plugin = config('plugin')
     packages = deepcopy(GATEWAY_PKGS[plugin])
     source = os_release('neutron-common')
-    if plugin == 'ovs':
+    if plugin == OVS:
         if (source >= 'icehouse' and
                 lsb_release()['DISTRIB_CODENAME'] < 'utopic'):
             # NOTE(jamespage) neutron-vpn-agent supercedes l3-agent for
@@ -255,8 +293,6 @@ def get_packages():
             packages.remove('neutron-l3-agent')
             packages.append('neutron-vpn-agent')
             packages.append('openswan')
-        if source >= 'kilo':
-            packages.append('python-neutron-fwaas')
         if source >= 'liberty':
             # Switch out mysql driver
             packages.remove('python-mysqldb')
@@ -265,6 +301,9 @@ def get_packages():
             # Switch out to actual ovs agent package
             packages.remove('neutron-plugin-openvswitch-agent')
             packages.append('neutron-openvswitch-agent')
+        if source >= 'kilo':
+            packages.append('python-neutron-fwaas')
+    if plugin in (OVS, OVS_ODL):
         if source >= 'newton':
             # LBaaS v1 dropped in newton
             packages.remove('neutron-lbaas-agent')
@@ -325,6 +364,12 @@ NOVA_CONFIG_FILES = {
                           context.NotificationDriverContext()],
         'services': ['nova-api-metadata']
     },
+    NOVA_API_METADATA_AA_PROFILE_PATH: {
+        'services': ['nova-api-metadata'],
+        'hook_contexts': [
+            context.AppArmorContext(NOVA_API_METADATA_AA_PROFILE)
+        ],
+    },
 }
 
 NEUTRON_SHARED_CONFIG_FILES = {
@@ -341,6 +386,36 @@ NEUTRON_SHARED_CONFIG_FILES = {
                           context.WorkerConfigContext(),
                           NeutronGatewayContext()],
         'services': ['neutron-metadata-agent']
+    },
+    NEUTRON_DHCP_AA_PROFILE_PATH: {
+        'services': ['neutron-dhcp-agent'],
+        'hook_contexts': [
+            context.AppArmorContext(NEUTRON_DHCP_AA_PROFILE)
+        ],
+    },
+    NEUTRON_LBAAS_AA_PROFILE_PATH: {
+        'services': ['neutron-lbaas-agent'],
+        'hook_contexts': [
+            context.AppArmorContext(NEUTRON_LBAAS_AA_PROFILE)
+        ],
+    },
+    NEUTRON_LBAASV2_AA_PROFILE_PATH: {
+        'services': ['neutron-lbaasv2-agent'],
+        'hook_contexts': [
+            context.AppArmorContext(NEUTRON_LBAASV2_AA_PROFILE)
+        ],
+    },
+    NEUTRON_METADATA_AA_PROFILE_PATH: {
+        'services': ['neutron-metadata-agent'],
+        'hook_contexts': [
+            context.AppArmorContext(NEUTRON_METADATA_AA_PROFILE)
+        ],
+    },
+    NEUTRON_METERING_AA_PROFILE_PATH: {
+        'services': ['neutron-metering-agent'],
+        'hook_contexts': [
+            context.AppArmorContext(NEUTRON_METERING_AA_PROFILE)
+        ],
     },
 }
 NEUTRON_SHARED_CONFIG_FILES.update(NOVA_CONFIG_FILES)
@@ -389,13 +464,21 @@ NEUTRON_OVS_CONFIG_FILES = {
         'hook_contexts': [NeutronGatewayContext()],
         'services': ['neutron-plugin-openvswitch-agent']
     },
-    NEUTRON_ML2_PLUGIN_CONF: {
+    NEUTRON_OVS_AGENT_CONF: {
         'hook_contexts': [NeutronGatewayContext()],
         'services': ['neutron-plugin-openvswitch-agent']
     },
-    NEUTRON_OVS_AGENT_CONF: {
-        'hook_contexts': [NeutronGatewayContext()],
-        'services': ['neutron-openvswitch-agent']
+    NEUTRON_OVS_AA_PROFILE_PATH: {
+        'services': ['neutron-plugin-openvswitch-agent'],
+        'hook_contexts': [
+            context.AppArmorContext(NEUTRON_OVS_AA_PROFILE)
+        ],
+    },
+    NEUTRON_L3_AA_PROFILE_PATH: {
+        'services': ['neutron-l3-agent', 'neutron-vpn-agent'],
+        'hook_contexts': [
+            context.AppArmorContext(NEUTRON_L3_AA_PROFILE)
+        ],
     },
     EXT_PORT_CONF: {
         'hook_contexts': [ExternalPortContext()],
@@ -581,6 +664,12 @@ def resolve_config_files(plugin, release):
     # Use MAAS1.9 for MTU and external port config on xenial and above
     if lsb_release()['DISTRIB_CODENAME'] >= 'xenial':
         drop_config.extend([EXT_PORT_CONF, PHY_NIC_MTU_CONF])
+
+    # Rename to lbaasv2 in newton
+    if os_release('neutron-common') < 'newton':
+        drop_config.extend([NEUTRON_LBAASV2_AA_PROFILE_PATH])
+    else:
+        drop_config.extend([NEUTRON_LBAAS_AA_PROFILE_PATH])
 
     for _config in drop_config:
         if _config in config_files[plugin]:
@@ -768,6 +857,9 @@ def do_openstack_upgrade(configs):
     apt_update(fatal=True)
     apt_upgrade(options=dpkg_opts,
                 fatal=True, dist=True)
+    # The cached version of os_release will now be invalid as the pkg version
+    # should have changed during the upgrade.
+    reset_os_release()
     apt_install(get_early_packages(), fatal=True)
     apt_install(get_packages(), fatal=True)
     configs.set_release(openstack_release=new_os_rel)
@@ -972,10 +1064,10 @@ def git_pre_install():
     add_user_to_group('nova', 'nova')
 
     for d in dirs:
-        mkdir(d, owner='neutron', group='neutron', perms=0755, force=False)
+        mkdir(d, owner='neutron', group='neutron', perms=0o755, force=False)
 
     for l in logs:
-        write_file(l, '', owner='neutron', group='neutron', perms=0644)
+        write_file(l, '', owner='neutron', group='neutron', perms=0o644)
 
 
 def git_post_install(projects_yaml):
@@ -1472,3 +1564,9 @@ def _pause_resume_helper(f, configs):
     f(assess_status_func(configs),
       services=active_services,
       ports=None)
+
+
+def configure_apparmor():
+    '''Configure all apparmor profiles for the local unit'''
+    for profile in APPARMOR_PROFILES:
+        context.AppArmorContext(profile).setup_aa_profile()

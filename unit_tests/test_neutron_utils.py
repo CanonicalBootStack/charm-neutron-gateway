@@ -41,9 +41,9 @@ TO_PATCH = [
     'lsb_release',
     'mkdir',
     'copy2',
-    'NeutronAPIContext',
     'init_is_systemd',
     'os_application_version_set',
+    'NeutronAPIContext',
 ]
 
 openstack_origin_git = \
@@ -178,6 +178,31 @@ class TestNeutronUtils(CharmTestCase):
         self.assertFalse('neutron-lbaas-agent' in packages)
         self.assertFalse('python-mysqldb' in packages)
         self.assertTrue('python-pymysql' in packages)
+
+    @patch.object(neutron_utils, 'git_install_requested')
+    def test_get_packages_ovsodl_icehouse(self, git_requested):
+        git_requested.return_value = False
+        self.config.return_value = 'ovs-odl'
+        self.os_release.return_value = 'icehouse'
+        packages = neutron_utils.get_packages()
+        self.assertTrue('neutron-metering-agent' in packages)
+        self.assertFalse('neutron-plugin-metering-agent' in packages)
+        self.assertFalse('neutron-plugin-openvswitch-agent' in packages)
+        self.assertFalse('neutron-openvswitch-agent' in packages)
+        self.assertTrue('neutron-lbaas-agent' in packages)
+
+    @patch.object(neutron_utils, 'git_install_requested')
+    def test_get_packages_ovsodl_newton(self, git_requested):
+        git_requested.return_value = False
+        self.config.return_value = 'ovs-odl'
+        self.os_release.return_value = 'newton'
+        packages = neutron_utils.get_packages()
+        self.assertTrue('neutron-metering-agent' in packages)
+        self.assertFalse('neutron-plugin-metering-agent' in packages)
+        self.assertFalse('neutron-plugin-openvswitch-agent' in packages)
+        self.assertFalse('neutron-openvswitch-agent' in packages)
+        self.assertFalse('neutron-lbaas-agent' in packages)
+        self.assertTrue('neutron-lbaasv2-agent' in packages)
 
     @patch.object(neutron_utils, 'git_install_requested')
     def test_get_packages_l3ha(self, git_requested):
@@ -337,11 +362,11 @@ class TestNeutronUtils(CharmTestCase):
         self.config.return_value = 'ovs'
         self.get_os_codename_install_source.return_value = 'havana'
         mock_get_packages.return_value = ['neutron-vpn-agent']
+        self.os_release.return_value = 'icehouse'
         ex_map = {
             neutron_utils.NEUTRON_CONF: ['neutron-dhcp-agent',
                                          'neutron-metadata-agent',
                                          'neutron-plugin-openvswitch-agent',
-                                         'neutron-plugin-metering-agent',
                                          'neutron-metering-agent',
                                          'neutron-lbaas-agent',
                                          'neutron-vpn-agent'],
@@ -358,10 +383,22 @@ class TestNeutronUtils(CharmTestCase):
             neutron_utils.NEUTRON_DHCP_AGENT_CONF: ['neutron-dhcp-agent'],
             neutron_utils.NEUTRON_FWAAS_CONF: ['neutron-vpn-agent'],
             neutron_utils.NEUTRON_METERING_AGENT_CONF:
-            ['neutron-metering-agent', 'neutron-plugin-metering-agent'],
+            ['neutron-metering-agent'],
             neutron_utils.NOVA_CONF: ['nova-api-metadata'],
             neutron_utils.EXT_PORT_CONF: ['ext-port'],
             neutron_utils.PHY_NIC_MTU_CONF: ['os-charm-phy-nic-mtu'],
+            neutron_utils.NEUTRON_DHCP_AA_PROFILE_PATH: ['neutron-dhcp-agent'],
+            neutron_utils.NEUTRON_OVS_AA_PROFILE_PATH:
+                ['neutron-plugin-openvswitch-agent'],
+            neutron_utils.NEUTRON_L3_AA_PROFILE_PATH: ['neutron-vpn-agent'],
+            neutron_utils.NEUTRON_LBAAS_AA_PROFILE_PATH:
+            ['neutron-lbaas-agent'],
+            neutron_utils.NEUTRON_METADATA_AA_PROFILE_PATH:
+            ['neutron-metadata-agent'],
+            neutron_utils.NEUTRON_METERING_AA_PROFILE_PATH:
+            ['neutron-metering-agent'],
+            neutron_utils.NOVA_API_METADATA_AA_PROFILE_PATH:
+            ['nova-api-metadata'],
         }
 
         self.assertDictEqual(neutron_utils.restart_map(), ex_map)
@@ -394,6 +431,18 @@ class TestNeutronUtils(CharmTestCase):
             neutron_utils.NOVA_CONF: ['nova-api-metadata'],
             neutron_utils.EXT_PORT_CONF: ['ext-port'],
             neutron_utils.PHY_NIC_MTU_CONF: ['os-charm-phy-nic-mtu'],
+            neutron_utils.NEUTRON_DHCP_AA_PROFILE_PATH: ['neutron-dhcp-agent'],
+            neutron_utils.NEUTRON_OVS_AA_PROFILE_PATH:
+                ['neutron-openvswitch-agent'],
+            neutron_utils.NEUTRON_L3_AA_PROFILE_PATH: ['neutron-vpn-agent'],
+            neutron_utils.NEUTRON_LBAAS_AA_PROFILE_PATH:
+            ['neutron-lbaas-agent'],
+            neutron_utils.NEUTRON_METADATA_AA_PROFILE_PATH:
+            ['neutron-metadata-agent'],
+            neutron_utils.NEUTRON_METERING_AA_PROFILE_PATH:
+            ['neutron-metering-agent'],
+            neutron_utils.NOVA_API_METADATA_AA_PROFILE_PATH:
+            ['nova-api-metadata'],
         }
         self.assertEqual(ex_map, neutron_utils.restart_map())
 
@@ -462,9 +511,58 @@ class TestNeutronUtils(CharmTestCase):
             neutron_utils.NOVA_CONF: ['nova-api-metadata'],
             neutron_utils.EXT_PORT_CONF: ['ext-port'],
             neutron_utils.PHY_NIC_MTU_CONF: ['os-charm-phy-nic-mtu'],
+            neutron_utils.NEUTRON_DHCP_AA_PROFILE_PATH: ['neutron-dhcp-agent'],
+            neutron_utils.NEUTRON_L3_AA_PROFILE_PATH: ['neutron-vpn-agent'],
+            neutron_utils.NEUTRON_LBAAS_AA_PROFILE_PATH:
+            ['neutron-lbaas-agent'],
+            neutron_utils.NEUTRON_METADATA_AA_PROFILE_PATH:
+            ['neutron-metadata-agent'],
+            neutron_utils.NEUTRON_METERING_AA_PROFILE_PATH:
+            ['neutron-metering-agent'],
+            neutron_utils.NOVA_API_METADATA_AA_PROFILE_PATH:
+            ['nova-api-metadata'],
         }
 
         self.assertDictEqual(neutron_utils.restart_map(), ex_map)
+
+    @patch.object(neutron_utils, 'get_packages')
+    def test_restart_map_ovs_odl_newton(self, mock_get_packages):
+        self.config.return_value = 'ovs-odl'
+        mock_get_packages.return_value = ['neutron-vpn-agent']
+        self.os_release.return_value = 'newton'
+        ex_map = {
+            neutron_utils.NEUTRON_CONF: ['neutron-dhcp-agent',
+                                         'neutron-metadata-agent',
+                                         'neutron-metering-agent',
+                                         'neutron-lbaasv2-agent',
+                                         'neutron-vpn-agent'],
+            neutron_utils.NEUTRON_DNSMASQ_CONF: ['neutron-dhcp-agent'],
+            neutron_utils.NEUTRON_LBAAS_AGENT_CONF:
+            ['neutron-lbaasv2-agent'],
+            neutron_utils.NEUTRON_METADATA_AGENT_CONF:
+            ['neutron-metadata-agent'],
+            neutron_utils.NEUTRON_VPNAAS_AGENT_CONF: ['neutron-vpn-agent'],
+            neutron_utils.NEUTRON_L3_AGENT_CONF: ['neutron-vpn-agent'],
+            neutron_utils.NEUTRON_DHCP_AGENT_CONF: ['neutron-dhcp-agent'],
+            neutron_utils.NEUTRON_FWAAS_CONF: ['neutron-vpn-agent'],
+            neutron_utils.NEUTRON_METERING_AGENT_CONF:
+            ['neutron-metering-agent'],
+            neutron_utils.NOVA_CONF: ['nova-api-metadata'],
+            neutron_utils.EXT_PORT_CONF: ['ext-port'],
+            neutron_utils.PHY_NIC_MTU_CONF: ['os-charm-phy-nic-mtu'],
+            neutron_utils.NEUTRON_DHCP_AA_PROFILE_PATH: ['neutron-dhcp-agent'],
+            neutron_utils.NEUTRON_L3_AA_PROFILE_PATH: ['neutron-vpn-agent'],
+            neutron_utils.NEUTRON_LBAASV2_AA_PROFILE_PATH:
+            ['neutron-lbaasv2-agent'],
+            neutron_utils.NEUTRON_METADATA_AA_PROFILE_PATH:
+            ['neutron-metadata-agent'],
+            neutron_utils.NEUTRON_METERING_AA_PROFILE_PATH:
+            ['neutron-metering-agent'],
+            neutron_utils.NOVA_API_METADATA_AA_PROFILE_PATH:
+            ['nova-api-metadata'],
+        }
+
+        self.assertEqual(neutron_utils.restart_map(), ex_map)
 
     @patch('charmhelpers.contrib.openstack.templating.OSConfigRenderer')
     def test_register_configs_nsx(self, mock_renderer):
@@ -539,12 +637,14 @@ class TestNeutronUtils(CharmTestCase):
 
     def test_resolve_config_files_ovs_liberty(self):
         self._set_distrib_codename('trusty')
+        self.os_release.return_value = 'liberty'
         self.is_relation_made = False
         actual_map = neutron_utils.resolve_config_files(neutron_utils.OVS,
                                                         'liberty')
         actual_configs = actual_map[neutron_utils.OVS].keys()
         INC_CONFIG = [neutron_utils.NEUTRON_ML2_PLUGIN_CONF]
-        EXC_CONFIG = [neutron_utils.NEUTRON_OVS_AGENT_CONF]
+        EXC_CONFIG = [neutron_utils.NEUTRON_OVS_AGENT_CONF,
+                      neutron_utils.NEUTRON_LBAASV2_AA_PROFILE_PATH]
         for config in INC_CONFIG:
             self.assertTrue(config in actual_configs)
         for config in EXC_CONFIG:
@@ -552,12 +652,14 @@ class TestNeutronUtils(CharmTestCase):
 
     def test_resolve_config_files_ovs_mitaka(self):
         self._set_distrib_codename('trusty')
+        self.os_release.return_value = 'mitaka'
         self.is_relation_made = False
         actual_map = neutron_utils.resolve_config_files(neutron_utils.OVS,
                                                         'mitaka')
         actual_configs = actual_map[neutron_utils.OVS].keys()
         INC_CONFIG = [neutron_utils.NEUTRON_OVS_AGENT_CONF]
-        EXC_CONFIG = [neutron_utils.NEUTRON_ML2_PLUGIN_CONF]
+        EXC_CONFIG = [neutron_utils.NEUTRON_ML2_PLUGIN_CONF,
+                      neutron_utils.NEUTRON_LBAASV2_AA_PROFILE_PATH]
         for config in INC_CONFIG:
             self.assertTrue(config in actual_configs)
         for config in EXC_CONFIG:
@@ -565,23 +667,40 @@ class TestNeutronUtils(CharmTestCase):
 
     def test_resolve_config_files_ovs_trusty(self):
         self._set_distrib_codename('trusty')
+        self.os_release.return_value = 'mitaka'
         self.is_relation_made = False
         actual_map = neutron_utils.resolve_config_files(neutron_utils.OVS,
                                                         'mitaka')
         actual_configs = actual_map[neutron_utils.OVS].keys()
         INC_CONFIG = [neutron_utils.EXT_PORT_CONF,
-                      neutron_utils.PHY_NIC_MTU_CONF]
+                      neutron_utils.PHY_NIC_MTU_CONF,
+                      neutron_utils.NEUTRON_LBAAS_AA_PROFILE_PATH]
         for config in INC_CONFIG:
             self.assertTrue(config in actual_configs)
 
     def test_resolve_config_files_ovs_xenial(self):
         self._set_distrib_codename('xenial')
+        self.os_release.return_value = 'mitaka'
         self.is_relation_made = False
         actual_map = neutron_utils.resolve_config_files(neutron_utils.OVS,
                                                         'mitaka')
         actual_configs = actual_map[neutron_utils.OVS].keys()
         EXC_CONFIG = [neutron_utils.EXT_PORT_CONF,
-                      neutron_utils.PHY_NIC_MTU_CONF]
+                      neutron_utils.PHY_NIC_MTU_CONF,
+                      neutron_utils.NEUTRON_LBAASV2_AA_PROFILE_PATH]
+        for config in EXC_CONFIG:
+            self.assertTrue(config not in actual_configs)
+
+    def test_resolve_config_files_ovs_newton(self):
+        self._set_distrib_codename('xenial')
+        self.os_release.return_value = 'newton'
+        self.is_relation_made = False
+        actual_map = neutron_utils.resolve_config_files(neutron_utils.OVS,
+                                                        'newton')
+        actual_configs = actual_map[neutron_utils.OVS].keys()
+        EXC_CONFIG = [neutron_utils.EXT_PORT_CONF,
+                      neutron_utils.PHY_NIC_MTU_CONF,
+                      neutron_utils.NEUTRON_LBAAS_AA_PROFILE_PATH]
         for config in EXC_CONFIG:
             self.assertTrue(config not in actual_configs)
 

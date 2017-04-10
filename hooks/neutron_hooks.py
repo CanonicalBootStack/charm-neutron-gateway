@@ -70,6 +70,7 @@ from neutron_utils import (
     NEUTRON_COMMON,
     assess_status,
     install_systemd_override,
+    configure_apparmor,
 )
 
 hooks = Hooks()
@@ -142,6 +143,7 @@ def config_changed():
     if valid_plugin():
         CONFIGS.write_all()
         configure_ovs()
+        configure_apparmor()
     else:
         message = 'Please provide a valid plugin config'
         log(message, level=ERROR)

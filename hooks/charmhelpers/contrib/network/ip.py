@@ -406,7 +406,7 @@ def is_ip(address):
         # Test to see if already an IPv4/IPv6 address
         address = netaddr.IPAddress(address)
         return True
-    except netaddr.AddrFormatError:
+    except (netaddr.AddrFormatError, ValueError):
         return False
 
 
@@ -424,7 +424,11 @@ def ns_query(address):
     else:
         return None
 
-    answers = dns.resolver.query(address, rtype)
+    try:
+        answers = dns.resolver.query(address, rtype)
+    except dns.resolver.NXDOMAIN:
+        return None
+
     if answers:
         return str(answers[0])
     return None

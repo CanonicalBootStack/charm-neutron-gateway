@@ -18,7 +18,6 @@ tags:
 series:
   - xenial
   - trusty
-  - precise
   - yakkety
 extra-bindings:
   data:

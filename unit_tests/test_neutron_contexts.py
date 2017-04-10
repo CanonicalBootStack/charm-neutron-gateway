@@ -166,6 +166,8 @@ class TestNeutronGatewayContext(CharmTestCase):
             'vlan_ranges': 'physnet1:1000:2000,physnet2:2001:3000',
             'network_device_mtu': 9000,
             'veth_mtu': 9000,
+            'enable_isolated_metadata': False,
+            'enable_metadata_network': False,
             'dnsmasq_flags': {
                 'dhcp-userclass': 'set:ipxe,iPXE',
                 'dhcp-match': 'set:ipxe,175'
@@ -216,11 +218,40 @@ class TestNeutronGatewayContext(CharmTestCase):
             'vlan_ranges': 'physnet1:1000:2000,physnet2:2001:3000',
             'network_device_mtu': 9000,
             'veth_mtu': 9000,
+            'enable_isolated_metadata': False,
+            'enable_metadata_network': False,
             'dnsmasq_flags': {
                 'dhcp-userclass': 'set:ipxe,iPXE',
                 'dhcp-match': 'set:ipxe,175'
             }
         })
+
+    @patch('charmhelpers.contrib.openstack.context.relation_get')
+    @patch('charmhelpers.contrib.openstack.context.related_units')
+    @patch('charmhelpers.contrib.openstack.context.relation_ids')
+    @patch.object(neutron_contexts, 'get_shared_secret')
+    def test_dhcp_settings(self, _secret, _rids, _runits, _rget):
+        self.test_config.set('enable-isolated-metadata', True)
+        self.test_config.set('enable-metadata-network', True)
+        self.network_get_primary_address.return_value = '192.168.20.2'
+        self.unit_get.return_value = '10.5.0.1'
+        ctxt = neutron_contexts.NeutronGatewayContext()()
+        self.assertTrue(ctxt['enable_isolated_metadata'])
+        self.assertTrue(ctxt['enable_metadata_network'])
+
+    @patch('charmhelpers.contrib.openstack.context.relation_get')
+    @patch('charmhelpers.contrib.openstack.context.related_units')
+    @patch('charmhelpers.contrib.openstack.context.relation_ids')
+    @patch.object(neutron_contexts, 'get_shared_secret')
+    def test_dhcp_setting_plug_override(self, _secret, _rids, _runits, _rget):
+        self.test_config.set('plugin', 'nsx')
+        self.test_config.set('enable-isolated-metadata', False)
+        self.test_config.set('enable-metadata-network', False)
+        self.network_get_primary_address.return_value = '192.168.20.2'
+        self.unit_get.return_value = '10.5.0.1'
+        ctxt = neutron_contexts.NeutronGatewayContext()()
+        self.assertTrue(ctxt['enable_isolated_metadata'])
+        self.assertTrue(ctxt['enable_metadata_network'])
 
 
 class TestSharedSecret(CharmTestCase):

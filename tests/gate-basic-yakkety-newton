@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+
+"""Amulet tests on a basic quantum-gateway deployment on yakkety-newton."""
+
+from basic_deployment import NeutronGatewayBasicDeployment
+
+if __name__ == '__main__':
+    deployment = NeutronGatewayBasicDeployment(series='yakkety')
+    deployment.run_tests()

@@ -1,0 +1,49 @@
+# Last Modified: Fri Apr  1 16:26:34 2016
+# Mode: {{aa_profile_mode}}
+#include <tunables/global>
+
+/usr/bin/nova-metadata-api {
+  #include <abstractions/base>
+  #include <abstractions/python>
+  #include <abstractions/nameservice>
+
+  /usr/bin/nova-metadata-api r,
+
+  /sbin/ldconfig* rix,
+
+  /{,usr/}bin/ r,
+  /{,usr/}bin/** rix,
+
+  /etc/nova/** r,
+  /var/lib/nova/** rwk,
+  /var/log/nova/** rwk,
+  /{,var/}run/nova/** rwk,
+  /{,var/}run/lock/nova/** rwk,
+
+  # Allow unconfined sudo to support oslo.rootwrap
+  # profile makes no attempt to restrict this as this
+  # is limited by the appropriate rootwrap configuration.
+  /usr/bin/sudo Ux,
+
+  # Allow ip to run unrestricted for unpriviledged commands
+  /{,s}bin/ip Ux,
+
+  /tmp/* rw,
+  /var/tmp/* a,
+
+  # Required for parsing of managed process cmdline arguments
+  /proc/*/cmdline r,
+
+  # Required for assessment of current state of networking
+  /proc/sys/net/** r,
+
+{% if ubuntu_release <= '12.04' %}
+  /proc/*/mounts r,
+  /proc/*/status r,
+  /proc/*/ns/net r,
+{% else %}
+  owner @{PROC}/@{pid}/mounts r,
+  owner @{PROC}/@{pid}/status r,
+  owner @{PROC}/@{pid}/ns/net r,
+{% endif %}
+}

@@ -105,6 +105,14 @@ CLOUD_ARCHIVE_POCKETS = {
     'newton/proposed': 'xenial-proposed/newton',
     'xenial-newton/proposed': 'xenial-proposed/newton',
     'xenial-proposed/newton': 'xenial-proposed/newton',
+    # Ocata
+    'ocata': 'xenial-updates/ocata',
+    'xenial-ocata': 'xenial-updates/ocata',
+    'xenial-ocata/updates': 'xenial-updates/ocata',
+    'xenial-updates/ocata': 'xenial-updates/ocata',
+    'ocata/proposed': 'xenial-proposed/ocata',
+    'xenial-ocata/proposed': 'xenial-proposed/ocata',
+    'xenial-ocata/newton': 'xenial-proposed/ocata',
 }
 
 APT_NO_LOCK = 100  # The return code for "couldn't acquire lock" in APT.
@@ -314,3 +322,23 @@ def _run_apt_command(cmd, fatal=False):
 
     else:
         subprocess.call(cmd, env=env)
+
+
+def get_upstream_version(package):
+    """Determine upstream version based on installed package
+
+    @returns None (if not installed) or the upstream version
+    """
+    import apt_pkg
+    cache = apt_cache()
+    try:
+        pkg = cache[package]
+    except:
+        # the package is unknown to the current apt cache.
+        return None
+
+    if not pkg.current_ver:
+        # package is known, but no version is currently installed.
+        return None
+
+    return apt_pkg.upstream_version(pkg.current_ver.ver_str)
