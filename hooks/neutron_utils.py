@@ -576,7 +576,7 @@ NEUTRON_ACI_CONFIG_FILES = {
         'hook_contexts': [context.AMQPContext(ssl_dir=NEUTRON_CONF_DIR),
                           NeutronGatewayContext(),
                           SyslogContext()],
-        'services': [ 'neutron-dhcp-agent',
+        'services': ['neutron-dhcp-agent',
                      'neutron-metadata-agent']
     },
     NEUTRON_ML2_PLUGIN_CONF: {
@@ -595,7 +595,7 @@ CONFIG_FILES = {
     OVS: NEUTRON_OVS_CONFIG_FILES,
     N1KV: NEUTRON_N1KV_CONFIG_FILES,
     OVS_ODL: NEUTRON_OVS_ODL_CONFIG_FILES,
-    ACI: NEUTRON_ACI_CONFIG_FILES
+    ACI: NEUTRON_ACI_CONFIG_FILES,
 }
 
 SERVICE_RENAMES = {
