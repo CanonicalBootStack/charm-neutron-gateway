@@ -16,7 +16,7 @@ from charmhelpers.contrib.openstack.context import (
     NeutronAPIContext,
     config_flags_parser,
 )
-from charmhelpers.contrib.hahelpers.cluster import(
+from charmhelpers.contrib.hahelpers.cluster import (
     eligible_leader
 )
 from charmhelpers.contrib.network.ip import (
@@ -42,7 +42,7 @@ CORE_PLUGIN = {
     N1KV: NEUTRON_N1KV_PLUGIN,
     NSX: NEUTRON_NSX_PLUGIN,
     OVS_ODL: NEUTRON_OVS_ODL_PLUGIN,
-    ACI: NEUTRON_ML2_PLUGIN
+    ACI: NEUTRON_ML2_PLUGIN,
 }
 
 
